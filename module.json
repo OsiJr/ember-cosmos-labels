@@ -1,0 +1,39 @@
+{
+  "id": "ember-cosmos-labels",
+  "title": "Ember Cosmos Labels",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "OsiJr",
+      "discord": "osijr",
+      "flags": {}
+    }
+  ],
+  "flags": {
+    "canUpload": true
+  },
+  "esmodules": [
+    "scripts/ember-cosmos-labels.js"
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "crucible",
+        "type": "system",
+        "compatibility": {}
+      }
+    ],
+    "requires": [
+      {
+        "id": "ember",
+        "type": "module",
+        "compatibility": {}
+      }
+    ]
+  },
+  "description": "Adds labels to the cosmos elements"
+}
