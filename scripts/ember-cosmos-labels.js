@@ -137,6 +137,8 @@ async function UpdateLabelsOnCosmos()
 
 async function UpdateLabelsOnVistas()
 {
+  const isGM = game.user.isGM;
+
   // Get existing notes
   var mappedNotes = {};
   for (const noteID in canvas.scene.notes.contents)
@@ -160,14 +162,11 @@ async function UpdateLabelsOnVistas()
 
     if (mappedSpriteID in pages)
     {
-      console.log("EmberCosmosLabels | We have a page for", mappedSpriteID);
-
       if (mappedSpriteID in mappedNotes) {
-        await mappedNotes[mappedSpriteID].update({
-          x: sprite.placements[0].x,
-          y: sprite.placements[0].y
-        });
-      } else {
+        let note = mappedNotes[mappedSpriteID]
+        note._object.x = sprite.placements[0].x + (canvas.stage.pivot.x - canvas.stage.width + canvas.stage.x) * 0.1;
+        note._object.y = sprite.placements[0].y + (canvas.stage.pivot.y - canvas.stage.height+ canvas.stage.y) * 0.1;
+      } else if (isGM) {
         let newNote = {
           entryId: pages[mappedSpriteID][0],
           pageId: pages[mappedSpriteID][1],
@@ -208,5 +207,11 @@ Hooks.on("initializeCanvasEnvironment", function() {
   if (canvas.scene.id === 'emberCosmos00000')
     UpdateLabelsOnCosmos();
   else if (ember.scene.config.label.indexOf("Vista") >= 0)
+    UpdateLabelsOnVistas();
+});
+
+Hooks.on("canvasPan", function() {
+  //console.log("EmberCosmosLabels | This code runs when the canvas is panned.");
+  if (ember.scene.config.label.indexOf("Vista") >= 0)
     UpdateLabelsOnVistas();
 });
