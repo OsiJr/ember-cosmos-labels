@@ -14,6 +14,21 @@ let pages = {
   'Lantyr': ['emberDeities0000', '8PNpme2Ot0zfHLBH']
 }
 
+function getMappedNotes() {
+  var mappedNotes = {}
+
+  for (const noteID in canvas.scene.notes.contents)
+  {
+    let note = canvas.scene.notes.contents[noteID]
+    if (note.text in pages)
+    {
+      mappedNotes[note.text] = note;
+    }
+  }
+
+  return mappedNotes;
+}
+
 async function UpdateLabelsOnCosmos()
 {
   const isGM = game.user.isGM;
@@ -68,13 +83,16 @@ async function UpdateLabelsOnCosmos()
     {
       foundNotes.push(note.text)
     
-      // Moving this way works for non-GMs
-      note._object.x = items[note.text].x;
-      note._object.y = items[note.text].y;
-    
-      // Remove the background from the item
-      if (hideBackgrounds)
-        note._object.controlIcon.alpha = 0;
+      if (note._object)
+      {
+        // Moving this way works for non-GMs
+        note._object.x = items[note.text].x;
+        note._object.y = items[note.text].y;
+      
+        // Remove the background from the item
+        if (hideBackgrounds)
+          note._object.controlIcon.alpha = 0;
+      }
 
       // Remove it so it doesn't get processed below
       delete items[note.text];
@@ -140,15 +158,7 @@ async function UpdateLabelsOnVistas()
   const isGM = game.user.isGM;
 
   // Get existing notes
-  var mappedNotes = {};
-  for (const noteID in canvas.scene.notes.contents)
-  {
-    let note = canvas.scene.notes.contents[noteID]
-    if (note.text in pages)
-    {
-      mappedNotes[note.text] = note;
-    }
-  }
+  var mappedNotes = getMappedNotes()
 
   // Get Scene Elements
   for (const spriteID in ember.scene.composition.sprites) {
@@ -164,8 +174,10 @@ async function UpdateLabelsOnVistas()
     {
       if (mappedSpriteID in mappedNotes) {
         let note = mappedNotes[mappedSpriteID]
-        note._object.x = sprite.placements[0].x + (canvas.stage.pivot.x - canvas.stage.width + canvas.stage.x) * 0.1;
-        note._object.y = sprite.placements[0].y + (canvas.stage.pivot.y - canvas.stage.height+ canvas.stage.y) * 0.1;
+        if (note._object) {
+          note._object.x = sprite.placements[0].x + (canvas.stage.pivot.x - canvas.stage.width + canvas.stage.x) * 0.1;
+          note._object.y = sprite.placements[0].y + (canvas.stage.pivot.y - canvas.stage.height+ canvas.stage.y) * 0.1;
+        }
       } else if (isGM) {
         let newNote = {
           entryId: pages[mappedSpriteID][0],
@@ -183,21 +195,19 @@ async function UpdateLabelsOnVistas()
           }
         }
         await canvas.scene.createEmbeddedDocuments("Note", [newNote])
+        mappedNotes = getMappedNotes()
       }
     }
   }
 
   if (hideBackgrounds)
   {
-    for (const noteID in canvas.scene.notes.contents)
+    for (const noteID in mappedNotes)
     {
-      let note = canvas.scene.notes.contents[noteID]
-      if (note.text in pages)
-      {
-        // Remove the background from the item
-        if (note._object?.controlIcon)
-          note._object.controlIcon.alpha = 0;
-      }
+      let note = mappedNotes[noteID]
+      // Remove the background from the item
+      if (note._object?.controlIcon)
+        note._object.controlIcon.alpha = 0;
     }
   }
 }
