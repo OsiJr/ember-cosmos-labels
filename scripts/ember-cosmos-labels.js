@@ -68,14 +68,9 @@ async function UpdateLabelsOnCosmos()
     {
       foundNotes.push(note.text)
     
-      if (isGM) {
-        await note.update({
-          x: items[note.text].x,
-          y: items[note.text].y
-        });
-      } else {
-        //TODO: Move them for players if there isn't a GM in the scene
-      }
+      // Moving this way works for non-GMs
+      note._object.x = items[note.text].x;
+      note._object.y = items[note.text].y;
     
       // Remove the background from the item
       if (hideBackgrounds)
@@ -120,18 +115,20 @@ async function UpdateLabelsOnCosmos()
       }
     }
   
-    if (newNotes.length > 0 && hideBackgrounds)
+    if (newNotes.length > 0)
     {
       await canvas.scene.createEmbeddedDocuments("Note", newNotes)
   
-      // Remove the background on the new notes
-      for (const noteid in canvas.scene.notes.contents)
-      {
-        let note = canvas.scene.notes.contents[noteid]
-        if (note.text in items)
+      if (hideBackgrounds) {
+        // Remove the background on the new notes
+        for (const noteid in canvas.scene.notes.contents)
         {
-          // Remove the background from the item
-          note._object.controlIcon.alpha = 0;
+          let note = canvas.scene.notes.contents[noteid]
+          if (note.text in items)
+          {
+            // Remove the background from the item
+            note._object.controlIcon.alpha = 0;
+          }
         }
       }
     }
