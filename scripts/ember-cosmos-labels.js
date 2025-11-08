@@ -1,4 +1,6 @@
 const hideBackgrounds = true;
+const debugMode = false;
+var isUpdating = false;
 
 // Pages
 let pages = {
@@ -31,12 +33,18 @@ function getMappedNotes() {
 
 async function UpdateLabelsOnCosmos()
 {
+  if (isUpdating || !canvas.ready) {
+    if (debugMode)
+      console.log("EmberCosmosLabels | UpdateLabelsOnCosmos skipped, isUpdating:", isUpdating, "canvas.ready:", canvas.ready);
+    return;
+  }
+  isUpdating = true;
   const isGM = game.user.isGM;
 
   // Check we're on the right scene
   if (canvas.scene.id !== 'emberCosmos00000')
   {
-    console.log("EmberCosmosLabels | This only works from 'The Cosmos' scene");
+    console.warn("EmberCosmosLabels | This only works from 'The Cosmos' scene");
     return;
   }
 
@@ -88,10 +96,6 @@ async function UpdateLabelsOnCosmos()
         // Moving this way works for non-GMs
         note._object.x = items[note.text].x;
         note._object.y = items[note.text].y;
-      
-        // Remove the background from the item
-        if (hideBackgrounds)
-          note._object.controlIcon.alpha = 0;
       }
 
       // Remove it so it doesn't get processed below
@@ -102,8 +106,6 @@ async function UpdateLabelsOnCosmos()
     }
   }
   
-  //console.log("EmberCosmosLabels | FoundNotes:", foundNotes);
-
   // Create New Notes
   if (isGM)
   {
@@ -113,7 +115,7 @@ async function UpdateLabelsOnCosmos()
     {
       let item = items[itemid]
       if (!(item.name in pages)) {
-        console.log("EmberCosmosLabels | ", item.name, "does not have a page!")
+        console.warn("EmberCosmosLabels | ", item.name, "does not have a page!")
       } else {
         newNotes.push({
           entryId: pages[item.name][0],
@@ -136,25 +138,20 @@ async function UpdateLabelsOnCosmos()
     if (newNotes.length > 0)
     {
       await canvas.scene.createEmbeddedDocuments("Note", newNotes)
-  
-      if (hideBackgrounds) {
-        // Remove the background on the new notes
-        for (const noteid in canvas.scene.notes.contents)
-        {
-          let note = canvas.scene.notes.contents[noteid]
-          if (note.text in items)
-          {
-            // Remove the background from the item
-            note._object.controlIcon.alpha = 0;
-          }
-        }
-      }
     }
   }
+
+  isUpdating = false;
 }
 
 async function UpdateLabelsOnVistas()
 {
+  if (isUpdating || !canvas.ready) {
+    if (debugMode)
+      console.log("EmberCosmosLabels | UpdateLabelsOnVistas skipped, isUpdating:", isUpdating, "canvas.ready:", canvas.ready);
+    return;
+  }
+  isUpdating = true;
   const isGM = game.user.isGM;
 
   // Get existing notes
@@ -194,26 +191,18 @@ async function UpdateLabelsOnVistas()
             scaleY: 0
           }
         }
-        await canvas.scene.createEmbeddedDocuments("Note", [newNote])
+        await canvas.scene.createEmbeddedDocuments("Note", [newNote]);
         mappedNotes = getMappedNotes()
       }
     }
   }
 
-  if (hideBackgrounds)
-  {
-    for (const noteID in mappedNotes)
-    {
-      let note = mappedNotes[noteID]
-      // Remove the background from the item
-      if (note._object?.controlIcon)
-        note._object.controlIcon.alpha = 0;
-    }
-  }
+  isUpdating = false;
 }
 
 Hooks.on("initializeCanvasEnvironment", function() {
-  //console.log("EmberCosmosLabels | This code runs when the scene updates.");
+  if (debugMode)
+    console.log("EmberCosmosLabels | This code runs in initializeCanvasEnvironment.");
   if (canvas.scene.id === 'emberCosmos00000')
     UpdateLabelsOnCosmos();
   else if (ember.scene.config.label.indexOf("Vista") >= 0)
@@ -221,7 +210,27 @@ Hooks.on("initializeCanvasEnvironment", function() {
 });
 
 Hooks.on("canvasPan", function() {
-  //console.log("EmberCosmosLabels | This code runs when the canvas is panned.");
+  if (debugMode)
+    console.log("EmberCosmosLabels | This code runs when is canvasPan.");
   if (ember.scene.config.label.indexOf("Vista") >= 0)
     UpdateLabelsOnVistas();
 });
+
+Hooks.on("activateNotesLayer", function() {
+  if (debugMode)
+    console.log("EmberCosmosLabels | This code runs in activateNotesLayer.");
+
+  if (canvas.scene.id === 'emberCosmos00000')
+    UpdateLabelsOnCosmos();
+})
+
+Hooks.on("refreshNote", function(note, options, userId) {
+  if (debugMode)
+    console.log("EmberCosmosLabels | This code runs in createNote.");
+
+  if ((ember.scene.config.label.indexOf("Vista") >= 0 || canvas.scene.id === 'emberCosmos00000') >= 0 && note.text in pages && hideBackgrounds)
+  {
+    if (note.controlIcon)
+      note.controlIcon.alpha = 0;
+  }
+})
